@@ -15,6 +15,7 @@ description: Create new skills, modify and improve existing skills, and measure 
 | Optimize description | Optimize | scripts/improve_description.py |
 | Package a skill | Package | scripts/package_skill.py |
 | Audit/review/optimize a skill | Audit | references/auditing.md, references/skill-development-principles.md |
+| Add/audit scripts for a skill | Script Engineer | agents/script-engineer.md, references/script-patterns.md |
 
 ## Guardrails (enforce on every run)
 
@@ -35,6 +36,7 @@ All tiers:
 - SKILL.md under 300 lines? Target 300, hard ceiling 350. Compress if over. (principles 6, 7)
 - No instructions for default Claude behavior? (principle 8)
 - v1 scope: core modes only, prove they work before adding features? (principle 34)
+- If skill retrieves data or calls APIs (Type A/D): does it use scripts for heavy lifting rather than model logic? (references/script-patterns.md — load script-engineer.md if not)
 
 Standard and Complex only:
 - Mode routing table at top? (principles 9, 21)
@@ -91,8 +93,8 @@ Ask about edge cases, input/output formats, example files, success criteria, and
 
 Fill in these components:
 
-- **name**: Skill identifier
-- **description**: Write this LAST, after the skill is built and reviewed, so it accurately reflects everything the skill does. Max 1024 characters. See "Writing the Description" below.
+- **name**: Gerund form (e.g., `analyzing-data`, `creating-reports`). Lowercase, hyphens only. No platform names (claude, anthropic). Max 64 chars.
+- **description**: Write this LAST. Third person. Max 1024 characters. See "Writing the Description" below.
 - **compatibility**: Required tools/dependencies (optional)
 - **skill body**: modes, steps, routing
 
@@ -100,11 +102,25 @@ Read `references/writing-guide.md` for skill anatomy, progressive disclosure, wr
 
 Every generated skill must include: a feedback/logging mechanism (see `references/feedback-loop.md`), a self-audit hook in any periodic mode, and an automation evaluation (can any output be scheduled).
 
+### Writing Standards (apply when authoring any skill body)
+
+**Degrees of Freedom** — match instruction format to how much judgment Claude should apply:
+- **Bullet points** → high freedom (heuristics, "use best judgment")
+- **Code block templates** → medium freedom (fill in this structured form)
+- **Exact bash commands** → low freedom (fragile ops, do not improvise)
+
+**Structure rules:**
+- Use `/` for all file paths, never `\`
+- Progressive disclosure goes one level deep only — link to a secondary file, never chain links further
+- Complex skills (3+ steps with state) must include a copy-pasteable markdown checklist Claude can update to track progress
+- For any multi-step workflow that modifies state: **Plan → Validate → Execute** — check preconditions before applying changes
+- Scripts are black boxes: if Claude is unsure how a script behaves, run `--help`, not guesswork
+
 ### Writing the Description
 
 The description is how Claude decides whether to use the skill — it's the most important line in the file. Write it after the skill is complete, not before.
 
-1. **Lead with what it does** in one sentence. Then list specific trigger contexts.
+1. **Write in third person.** Lead with what it does in one sentence. Then list specific trigger contexts.
 2. **Include trigger phrases** the user would actually say — both explicit ("audit this skill") and implicit ("is this skill doing too much?").
 3. **Be pushy.** Claude undertriggers by default. Add "ALWAYS trigger when..." with concrete examples. Include near-miss phrases the user might say.
 4. **Stay under 1024 characters.** This is a hard system limit. Every character counts — cut filler words.
@@ -313,3 +329,5 @@ Periodically review the log for patterns — if the same issue recurs across bui
 - `references/readme-template.md` — README.md template to fill in per skill
 - `references/auditing.md` — Architectural audit + post-ship performance audit
 - `references/skill-development-principles.md` — 34 architectural principles for skill quality
+- `agents/script-engineer.md` — Skill type classification + script design phase
+- `references/script-patterns.md` — Eight token-efficiency patterns for skill scripts
